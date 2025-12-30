@@ -1,0 +1,17 @@
+{
+    "name": "Shop2games",
+    "short_name": "Shop2games",
+    "description": "The definitive Amazon for Digital Goods",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#0a0a0c",
+    "theme_color": "#4f46e5",
+    "icons": [
+        {
+            "src": "/file.svg",
+            "sizes": "any",
+            "type": "image/svg+xml",
+            "purpose": "any maskable"
+        }
+    ]
+}
