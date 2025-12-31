@@ -1,12 +1,13 @@
 'use client'
 
 import { createClient } from '@/lib/supabase/client'
-import { useRouter } from 'next/navigation'
+import { useRouter, useParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 
 export default function ProfilePage() {
     const router = useRouter()
+    const { lang } = useParams()
     const [loading, setLoading] = useState(true)
     const [updating, setUpdating] = useState(false)
     const [form, setForm] = useState({
@@ -23,7 +24,7 @@ export default function ProfilePage() {
             const { data: { user } } = await supabase.auth.getUser()
 
             if (!user) {
-                router.push('/login')
+                router.push(`/${lang}/login`)
                 return
             }
 
@@ -102,8 +103,8 @@ export default function ProfilePage() {
                                 <p className="text-sm text-gray-400 mb-4">{form.email}</p>
 
                                 <span className={`px-3 py-1 rounded-full text-xs font-medium uppercase tracking-wider ${form.role === 'admin' ? 'bg-red-500/20 text-red-400 border border-red-500/30' :
-                                        form.role === 'seller' ? 'bg-green-500/20 text-green-400 border border-green-500/30' :
-                                            'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30'
+                                    form.role === 'seller' ? 'bg-green-500/20 text-green-400 border border-green-500/30' :
+                                        'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30'
                                     }`}>
                                     {form.role}
                                 </span>

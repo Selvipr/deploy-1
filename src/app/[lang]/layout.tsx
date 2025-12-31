@@ -9,6 +9,7 @@ import { CartProvider } from "@/context/CartContext";
 import { getDictionary } from "@/lib/dictionary";
 import LanguageProvider from "@/components/LanguageProvider";
 import CurrencyProvider from "@/context/CurrencyContext";
+import BottomNav from "@/components/BottomNav";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -76,6 +77,7 @@ export default async function RootLayout({
                 {children}
               </main>
               <Footer />
+              <BottomNav lang={lang} />
             </CartProvider>
           </CurrencyProvider>
         </LanguageProvider>

@@ -1,7 +1,7 @@
 'use client'
 
 import { createClient } from '@/lib/supabase/client'
-import { useRouter } from 'next/navigation'
+import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { useState } from 'react'
 
@@ -11,6 +11,7 @@ import { useDictionary } from '@/components/LanguageProvider'
 
 export default function LoginPage() {
     const router = useRouter()
+    const { lang } = useParams()
     const [isPending, startTransition] = useTransition()
     const [loading, setLoading] = useState(false)
     const [email, setEmail] = useState('')
@@ -26,6 +27,7 @@ export default function LoginPage() {
         const formData = new FormData()
         formData.append('email', email)
         formData.append('password', password)
+        formData.append('lang', lang as string)
 
         startTransition(async () => {
             const result = await login(null, formData)
@@ -71,6 +73,7 @@ export default function LoginPage() {
                 )}
 
                 <form className="space-y-6" onSubmit={handleLogin}>
+                    <input type="hidden" name="lang" value={lang} />
                     <div>
                         <label htmlFor="email" className="block text-sm font-medium leading-6 text-gray-300">
                             {auth.email}
@@ -178,7 +181,7 @@ export default function LoginPage() {
 
                 <p className="mt-10 text-center text-sm text-gray-400">
                     {auth.notMember}{' '}
-                    <Link href="/register" className="font-semibold leading-6 text-indigo-400 hover:text-indigo-300">
+                    <Link href={`/${lang}/register`} className="font-semibold leading-6 text-indigo-400 hover:text-indigo-300">
                         {auth.signUpNow}
                     </Link>
                 </p>

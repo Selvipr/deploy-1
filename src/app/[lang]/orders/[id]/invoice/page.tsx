@@ -6,13 +6,13 @@ import InvoicePrinter from './InvoicePrinter'
 export default async function InvoicePage({
     params,
 }: {
-    params: Promise<{ id: string }>
+    params: Promise<{ id: string; lang: string }>
 }) {
-    const { id } = await params
+    const { id, lang } = await params
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
-    if (!user) redirect('/login')
+    if (!user) redirect(`/${lang}/login`)
 
     const order = await OrderService.getOrderById(id)
 

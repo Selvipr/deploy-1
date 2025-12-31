@@ -1,13 +1,14 @@
 'use client'
 
 import { createClient } from '@/lib/supabase/client'
-import { useRouter } from 'next/navigation'
+import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { useState } from 'react'
 import { useDictionary } from '@/components/LanguageProvider'
 
 export default function RegisterPage() {
     const router = useRouter()
+    const { lang } = useParams()
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState('')
 
@@ -52,7 +53,7 @@ export default function RegisterPage() {
         if (data.user) {
             // Success
             alert("Account created! Please check your email.")
-            router.push('/login')
+            router.push(`/${lang}/login`)
         }
         setLoading(false)
     }

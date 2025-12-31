@@ -13,7 +13,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ lang
     } = await supabase.auth.getUser()
 
     if (!user) {
-        return redirect('/login')
+        return redirect(`/${lang}/login`)
     }
 
     /* 

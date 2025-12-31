@@ -45,7 +45,14 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
     const addToCart = (product: Product, formData?: Record<string, any>) => {
         // Generate a random ID for the cart item
-        const newItem = { ...product, cartId: crypto.randomUUID(), formData }
+        const generateId = () => {
+            if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+                return crypto.randomUUID();
+            }
+            return Math.random().toString(36).substring(2) + Date.now().toString(36);
+        }
+
+        const newItem = { ...product, cartId: generateId(), formData }
         setItems(prev => [...prev, newItem])
     }
 

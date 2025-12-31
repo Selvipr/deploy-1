@@ -4,9 +4,12 @@ import Link from 'next/link'
 
 export default async function SellerLayout({
     children,
+    params,
 }: {
     children: React.ReactNode
+    params: Promise<{ lang: string }>
 }) {
+    const { lang } = await params
     const supabase = await createClient()
 
     const {
@@ -14,7 +17,7 @@ export default async function SellerLayout({
     } = await supabase.auth.getUser()
 
     if (!user) {
-        return redirect('/login')
+        return redirect(`/${lang}/login`)
     }
 
     const { data: profile } = await supabase
@@ -29,7 +32,7 @@ export default async function SellerLayout({
                 <div className="text-center">
                     <h1 className="text-2xl font-bold mb-4">Access Denied</h1>
                     <p className="mb-6 text-gray-400">You must be a verified Seller to view this area.</p>
-                    <Link href="/dashboard" className="text-indigo-400 hover:text-indigo-300">
+                    <Link href={`/${lang}/dashboard`} className="text-indigo-400 hover:text-indigo-300">
                         &larr; Return to Dashboard
                     </Link>
                 </div>
@@ -46,19 +49,19 @@ export default async function SellerLayout({
                 </div>
                 <nav className="mt-6 px-4 space-y-2">
                     <Link
-                        href="/dashboard/seller"
+                        href={`/${lang}/dashboard/seller`}
                         className="block px-4 py-2 rounded-md text-gray-300 hover:bg-gray-700 hover:text-white"
                     >
                         Overview
                     </Link>
                     <Link
-                        href="/dashboard/seller/products/new"
+                        href={`/${lang}/dashboard/seller/products/new`}
                         className="block px-4 py-2 rounded-md text-gray-300 hover:bg-gray-700 hover:text-white"
                     >
                         Add Product
                     </Link>
                     <Link
-                        href="/dashboard/seller/inventory"
+                        href={`/${lang}/dashboard/seller/inventory`}
                         className="block px-4 py-2 rounded-md text-gray-300 hover:bg-gray-700 hover:text-white"
                     >
                         Inventory
