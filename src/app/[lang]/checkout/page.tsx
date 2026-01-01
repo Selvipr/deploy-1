@@ -5,6 +5,8 @@ import { createClient } from '@/lib/supabase/client'
 import { useRouter, useParams } from 'next/navigation'
 import { useState } from 'react'
 
+import { createBatchOrder } from '@/actions/checkout'
+
 export default function CheckoutPage() {
     const { items, cartTotal, clearCart } = useCart()
     const router = useRouter()
@@ -38,8 +40,82 @@ export default function CheckoutPage() {
                 return
             }
 
-            const { createBatchOrder } = await import('@/actions/checkout')
+            // createBatchOrder is now statically imported
 
+            if (paymentMethod === 'razorpay') {
+                // 1. Create Order on Server (Razorpay)
+                const res = await fetch('/api/razorpay/create-order', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ amount: cartTotal, currency: 'USD' })
+                })
+
+                if (!res.ok) throw new Error('Failed to create Razorpay order')
+                const order = await res.json()
+
+                // 2. Load SDK
+                const loadScript = (src: string) => {
+                    return new Promise((resolve) => {
+                        const script = document.createElement('script')
+                        script.src = src
+                        script.onload = () => resolve(true)
+                        script.onerror = () => resolve(false)
+                        document.body.appendChild(script)
+                    })
+                }
+
+                const resLoaded = await loadScript('https://checkout.razorpay.com/v1/checkout.js')
+                if (!resLoaded) {
+                    throw new Error('Razorpay SDK failed to load')
+                }
+
+                // 3. Open Checkout
+                const options = {
+                    key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+                    amount: order.amount,
+                    currency: order.currency,
+                    name: "Shop2Games",
+                    description: "Order Checkout",
+                    order_id: order.id,
+                    handler: async function (response: any) {
+                        try {
+                            // 4. Submit Order to our Backend with Signature
+                            const result = await createBatchOrder({
+                                items,
+                                paymentMethod: 'razorpay',
+                                contactEmail,
+                                deliveryNotes,
+                                razorpayData: {
+                                    orderId: order.id,
+                                    paymentId: response.razorpay_payment_id,
+                                    signature: response.razorpay_signature
+                                }
+                            })
+
+                            if (result.error) throw new Error(result.error)
+
+                            clearCart()
+                            router.push(`/${lang}/orders/${result.orderId}`)
+                        } catch (finalErr: any) {
+                            console.error(finalErr)
+                            alert('Order creation failed: ' + finalErr.message)
+                            setLoading(false)
+                        }
+                    },
+                    modal: {
+                        ondismiss: function () {
+                            setLoading(false)
+                        }
+                    },
+                    theme: { color: "#4f46e5" }
+                }
+
+                const paymentObject = new (window as any).Razorpay(options)
+                paymentObject.open()
+                return // Wait for handler
+            }
+
+            // Normal or Wallet Checkout
             const result = await createBatchOrder({
                 items,
                 paymentMethod,
@@ -51,7 +127,6 @@ export default function CheckoutPage() {
                 throw new Error(result.error)
             }
 
-            clearCart()
             clearCart()
             router.push(`/${lang}/orders/${result.orderId}`)
 
@@ -141,6 +216,17 @@ export default function CheckoutPage() {
                                             className="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-500"
                                         />
                                         <label htmlFor="wallet" className="ml-3 block text-sm font-medium text-gray-300">Platform Wallet</label>
+                                    </div>
+                                    <div className="flex items-center">
+                                        <input
+                                            id="razorpay"
+                                            name="payment-method"
+                                            type="radio"
+                                            checked={paymentMethod === 'razorpay'}
+                                            onChange={() => setPaymentMethod('razorpay')}
+                                            className="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                                        />
+                                        <label htmlFor="razorpay" className="ml-3 block text-sm font-medium text-gray-300">Razorpay (Cards/UPI)</label>
                                     </div>
                                 </div>
                             </div>

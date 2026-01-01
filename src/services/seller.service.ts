@@ -61,6 +61,24 @@ export class SellerService {
         if (error) throw error
     }
 
+    // Add Inventory (File)
+    static async addInventoryFile(productId: string, filePath: string, fileName: string) {
+        const supabase = createClient()
+
+        const { error } = await supabase
+            .from('inventory')
+            .insert({
+                product_id: productId,
+                secret_data: filePath, // Store the path
+                status: 'available',
+                type: 'file',
+                // You might want to store original filename in metadata if schema supports, 
+                // but for now relying on secret_data as path.
+            })
+
+        if (error) throw error
+    }
+
     // Get Inventory Stats for a Product
     static async getInventoryStats(productId: string) {
         const supabase = createClient()

@@ -4,6 +4,9 @@ import { redirect } from 'next/navigation'
 
 import { getDictionary } from '@/lib/dictionary'
 import OrderTracker from '@/components/OrderTracker'
+import EscrowActions from '@/components/EscrowActions'
+import OrderRealtimeListener from '@/components/OrderRealtimeListener'
+
 
 export default async function OrderDetailsPage({
     params,
@@ -28,8 +31,7 @@ export default async function OrderDetailsPage({
     // Server Actions for Escrow
     async function confirmReceived() {
         'use server'
-        // In a real app, you'd validate user permission here again or use OrderService which should check it
-        await OrderService.confirmOrder(id, order.items?.[0]?.seller_id, order.total) // Assuming 1 item for MVP
+        await OrderService.confirmOrder(id, order.items?.[0]?.seller_id, order.total)
         redirect(`/${lang}/orders/${id}`)
     }
 
@@ -41,6 +43,9 @@ export default async function OrderDetailsPage({
 
     return (
         <div className="min-h-screen bg-[#0a0a0c] text-white">
+            <OrderRealtimeListener orderId={id} />
+
+
             <div className="mx-auto max-w-3xl px-4 py-8 sm:py-16">
                 <div className="mb-6">
                     <h1 className="text-2xl font-bold mb-4">{dict.orders.detailsTitle}</h1>
@@ -102,7 +107,7 @@ export default async function OrderDetailsPage({
 
             {/* Secret Data Section (Only if Complete) */}
             {order.status === 'completed' && (
-                <div className="bg-green-900/20 border border-green-500/30 rounded-lg p-6 mb-8">
+                <div className="bg-green-900/20 border border-green-500/30 rounded-lg p-6 mb-8 max-w-3xl mx-auto px-4">
                     <h3 className="text-lg font-bold text-green-400 mb-4">{dict.orders.yourDigitalGoods}</h3>
 
                     <div className="font-mono bg-black/50 p-4 rounded text-lg tracking-widest text-center select-all break-all">
@@ -115,24 +120,22 @@ export default async function OrderDetailsPage({
 
             {/* Escrow Actions */}
             {order.status === 'escrow' && (
-                <div className="bg-yellow-900/20 border border-yellow-500/30 rounded-lg p-6">
+                <div className="bg-yellow-900/20 border border-yellow-500/30 rounded-lg p-6 max-w-3xl mx-auto px-4">
                     <h3 className="text-lg font-bold text-yellow-400 mb-2">{dict.orders.safeDealEscrow}</h3>
                     <p className="text-sm text-gray-300 mb-6">
                         {dict.orders.escrowDesc}
                     </p>
 
-                    <div className="flex flex-col sm:flex-row gap-4">
-                        <form action={confirmReceived} className="flex-1">
-                            <button className="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 px-4 rounded-lg transition-colors">
-                                {dict.orders.confirmReceived}
-                            </button>
-                        </form>
-                        <form action={raiseDispute} className="flex-1">
-                            <button className="w-full bg-red-600 hover:bg-red-500 text-white font-bold py-3 px-4 rounded-lg transition-colors">
-                                {dict.orders.disputeTransaction}
-                            </button>
-                        </form>
-                    </div>
+                    <EscrowActions
+                        onConfirm={confirmReceived}
+                        onDispute={raiseDispute}
+                        dict={{
+                            confirmReceived: dict.orders.confirmReceived,
+                            disputeTransaction: dict.orders.disputeTransaction,
+                            confirming: 'Confirming...', // Hardcoded fallbacks if dict missing
+                            processing: 'Processing...'
+                        }}
+                    />
                 </div>
             )}
         </div>

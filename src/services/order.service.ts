@@ -131,7 +131,10 @@ export class OrderService {
 
         if (orderError) throw orderError
 
-        // 2. Increment Seller Balance 
+        // 2. Increment Seller Balance (Net Amount = Total - 10% Fee)
+        const PLATFORM_FEE_PERCENT = 0.10
+        const netAmount = amount * (1 - PLATFORM_FEE_PERCENT)
+
         const { data: seller, error: sellerError } = await supabase
             .from('users')
             .select('wallet_balance')
@@ -141,7 +144,7 @@ export class OrderService {
         if (!sellerError && seller) {
             await supabase
                 .from('users')
-                .update({ wallet_balance: (seller.wallet_balance || 0) + amount })
+                .update({ wallet_balance: (seller.wallet_balance || 0) + netAmount })
                 .eq('id', sellerId)
         }
     }

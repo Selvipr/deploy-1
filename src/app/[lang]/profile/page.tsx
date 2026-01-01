@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useRouter, useParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import WalletTopUp from '@/components/WalletTopUp'
 
 export default function ProfilePage() {
     const router = useRouter()
@@ -19,34 +20,56 @@ export default function ProfilePage() {
     })
 
     useEffect(() => {
+        let mounted = true
+
         async function loadProfile() {
-            const supabase = createClient()
-            const { data: { user } } = await supabase.auth.getUser()
+            try {
+                const supabase = createClient()
+                const { data: { user } } = await supabase.auth.getUser()
 
-            if (!user) {
-                router.push(`/${lang}/login`)
-                return
+                if (!mounted) return
+
+                if (!user) {
+                    router.push(`/${lang}/login`)
+                    return
+                }
+
+                const { data, error } = await supabase
+                    .from('users')
+                    .select('*')
+                    .eq('id', user.id)
+                    .single()
+
+                if (error) {
+                    throw error
+                }
+
+                if (data && mounted) {
+                    setForm({
+                        full_name: data.full_name || '',
+                        email: data.email || '',
+                        phone: data.phone || '',
+                        wallet_balance: data.wallet_balance || 0,
+                        role: data.role || 'buyer'
+                    })
+                }
+            } catch (err: any) {
+                console.error('Error loading profile:', err)
+                if (mounted) {
+                    alert('Failed to load profile data: ' + (err.message || 'Unknown error'))
+                }
+            } finally {
+                if (mounted) {
+                    setLoading(false)
+                }
             }
-
-            const { data, error } = await supabase
-                .from('users')
-                .select('*')
-                .eq('id', user.id)
-                .single()
-
-            if (data) {
-                setForm({
-                    full_name: data.full_name || '',
-                    email: data.email || '',
-                    phone: data.phone || '',
-                    wallet_balance: data.wallet_balance || 0,
-                    role: data.role || 'buyer'
-                })
-            }
-            setLoading(false)
         }
         loadProfile()
-    }, [router])
+
+        return () => {
+            mounted = false
+        }
+    }, [router, lang])
 
     const handleUpdate = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -96,7 +119,7 @@ export default function ProfilePage() {
                             <div className="flex flex-col items-center text-center">
                                 <div className="h-24 w-24 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 p-[2px] mb-4">
                                     <div className="h-full w-full rounded-full bg-gray-900 flex items-center justify-center overflow-hidden">
-                                        <span className="text-3xl font-bold text-white uppercase">{form.full_name ? form.full_name[0] : form.email[0]}</span>
+                                        <span className="text-3xl font-bold text-white uppercase">{form.full_name ? form.full_name[0] : (form.email[0] || '?')}</span>
                                     </div>
                                 </div>
                                 <h1 className="text-xl font-bold text-white">{form.full_name || 'Anonymous User'}</h1>
@@ -122,16 +145,19 @@ export default function ProfilePage() {
                             </div>
                         </div>
 
+                        {/* Wallet Top Up */}
+                        <WalletTopUp />
+
                         {/* Quick Links */}
                         <div className="bg-gray-900/50 backdrop-blur-xl border border-white/10 rounded-2xl p-4 shadow-xl">
                             <nav className="flex flex-col space-y-1">
-                                <Link href="/orders" className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-300 rounded-xl hover:bg-white/5 hover:text-white transition-colors">
+                                <Link href={`/${lang}/orders`} className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-300 rounded-xl hover:bg-white/5 hover:text-white transition-colors">
                                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
                                     </svg>
                                     My Orders
                                 </Link>
-                                <Link href="/dashboard" className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-300 rounded-xl hover:bg-white/5 hover:text-white transition-colors">
+                                <Link href={`/${lang}/dashboard`} className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-300 rounded-xl hover:bg-white/5 hover:text-white transition-colors">
                                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
                                     </svg>
