@@ -9,14 +9,9 @@ export async function createBatchOrder(data: {
     items: Product[],
     paymentMethod: string,
     contactEmail: string,
-    deliveryNotes: string,
-    razorpayData?: {
-        orderId: string,
-        paymentId: string,
-        signature: string
-    }
+    deliveryNotes: string
 }) {
-    const { items, paymentMethod, contactEmail, deliveryNotes, razorpayData } = data
+    const { items, paymentMethod, contactEmail, deliveryNotes } = data
 
     try {
         const supabase = await createClient()
@@ -30,27 +25,9 @@ export async function createBatchOrder(data: {
         const total = items.reduce((sum, item) => sum + item.price, 0)
 
         // ---------------------------------------------------------
-        // RAZORPAY VERIFICATION LOGIC
-        // ---------------------------------------------------------
-        if (paymentMethod === 'razorpay') {
-            if (!razorpayData) throw new Error('Razorpay payment data missing')
-
-            const { orderId, paymentId, signature } = razorpayData
-            const generatedSignature = crypto
-                .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET!)
-                .update(orderId + "|" + paymentId)
-                .digest('hex')
-
-            if (generatedSignature !== signature) {
-                throw new Error('Invalid Razorpay Signature. Payment verification failed.')
-            }
-            // Payment verified. Proceed to create order.
-        }
-
-        // ---------------------------------------------------------
         // WALLET PAYMENT LOGIC
         // ---------------------------------------------------------
-        else if (paymentMethod === 'wallet') {
+        if (paymentMethod === 'wallet') {
             const { data: profile, error: profileErr } = await supabase
                 .from('users')
                 .select('wallet_balance')
